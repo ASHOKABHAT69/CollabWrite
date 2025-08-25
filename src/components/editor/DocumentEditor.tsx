@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react"
 import { Bold, Italic, List, ListOrdered, Strikethrough, Pilcrow, Type, Baseline, Underline } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -27,18 +29,20 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
   const editorRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    // Only update innerHTML when editing mode starts or content changes from outside
-    if (editorRef.current && editorRef.current.innerHTML !== content) {
+    // When editing mode starts, sync the editor's content with the prop.
+    // Or if the content changes from outside while not editing.
+    if (editorRef.current && isEditing && editorRef.current.innerHTML !== content) {
       editorRef.current.innerHTML = content;
     }
   }, [isEditing, content]);
 
-  const handleContentChange = (evt: React.FormEvent<HTMLDivElement>) => {
-    // Avoid re-rendering on every input by directly passing to the parent
-    // The parent state will be updated, but we won't force a re-render here
-    onContentChange(evt.currentTarget.innerHTML);
-  };
-  
+  const handleBlur = () => {
+    // When the user clicks away from the editor, sync the content back to parent state
+    if(editorRef.current) {
+      onContentChange(editorRef.current.innerHTML);
+    }
+  }
+
   const applyCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     if(editorRef.current) {
@@ -113,7 +117,7 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
             <div
                 ref={editorRef}
                 contentEditable={isEditing}
-                onInput={handleContentChange}
+                onBlur={handleBlur}
                 className="prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl mx-auto focus:outline-none min-h-[calc(100vh-18rem)] dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: content }}
             />

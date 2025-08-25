@@ -8,7 +8,7 @@ import { VersionHistory } from "@/components/editor/VersionHistory"
 import { BranchManager } from "@/components/editor/BranchManager"
 import { SmartSuggestions } from "@/components/editor/SmartSuggestions"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
-import { History, Sparkles, GitBranch, Users, Share2 } from "lucide-react"
+import { History, Sparkles, GitBranch, Users, Share2, Edit, Save } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -29,6 +29,8 @@ Multiple users can edit this document at the same time. Cursors of other users w
 ## 4. Smart Suggestions
 Click the 'Smart Suggestions' button and ask the AI for help. For example, try asking it to "suggest a concluding paragraph for this proposal."`
   );
+
+  const [isEditing, setIsEditing] = useState(false);
   
   const collaborators = [
     { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice' },
@@ -59,6 +61,15 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
                     <VersionHistory />
                   </SheetContent>
                 </Sheet>
+                 {isEditing ? (
+                  <Button onClick={() => setIsEditing(false)}>
+                    <Save className="mr-2 h-4 w-4" /> Save
+                  </Button>
+                ) : (
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Edit className="mr-2 h-4 w-4" /> Edit
+                  </Button>
+                )}
               </div>
               <div className="flex items-center gap-4">
                  <div className="flex items-center -space-x-2">
@@ -96,7 +107,11 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
               </div>
             </div>
           </div>
-          <DocumentEditor content={documentContent} onContentChange={setDocumentContent} />
+          <DocumentEditor
+            content={documentContent}
+            onContentChange={setDocumentContent}
+            isEditing={isEditing}
+          />
         </main>
       </div>
     </TooltipProvider>

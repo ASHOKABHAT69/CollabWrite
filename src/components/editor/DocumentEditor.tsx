@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Bold, Italic, List, ListOrdered, Strikethrough, Pilcrow, Type, FontSize } from "lucide-react"
+import { Bold, Italic, List, ListOrdered, Strikethrough, Pilcrow, Type, Baseline } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -135,7 +135,7 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-24 justify-start">
-                  <FontSize className="mr-2 h-4 w-4" />
+                  <Baseline className="mr-2 h-4 w-4" />
                   <span>{currentFontSize}</span>
                 </Button>
               </DropdownMenuTrigger>

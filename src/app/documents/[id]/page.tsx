@@ -8,14 +8,14 @@ import { VersionHistory } from "@/components/editor/VersionHistory"
 import { BranchManager } from "@/components/editor/BranchManager"
 import { SmartSuggestions } from "@/components/editor/SmartSuggestions"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
-import { History, Sparkles, GitBranch, Users, Share2, Edit, Save, Download, FileText } from "lucide-react"
+import { History, Sparkles, GitBranch, Users, Share2, Edit, Save, Download } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-export default function DocumentPage({ params }: { params: { id: string } }) {
+export default function DocumentPage({ params }: { params: { id:string } }) {
   const [documentContent, setDocumentContent] = useState(
 `# Project Proposal Q3 - CollabWrite Draft
 
@@ -34,38 +34,32 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
   );
 
   const [isEditing, setIsEditing] = useState(false);
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   
   const handleDownloadPdf = () => {
-    const input = editorRef.current;
-    if (input) {
-      // Temporarily remove readOnly to render content for canvas
-      const textarea = input.querySelector('textarea');
-      if (textarea) {
-        const wasReadOnly = textarea.readOnly;
-        textarea.readOnly = false;
-        
-        html2canvas(input, {
-          scale: 2,
-          logging: false,
-          useCORS: true,
-           onclone: (document) => {
-            const clonedTextarea = document.querySelector('textarea');
-            if(clonedTextarea) {
-              clonedTextarea.style.height = 'auto';
-              clonedTextarea.style.overflow = 'visible';
-            }
-          }
-        }).then(canvas => {
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'px', [canvas.width, canvas.height]);
-          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-          pdf.save("document.pdf");
-          
-          // Restore readOnly state
-          textarea.readOnly = wasReadOnly;
+    const editorContent = editorContainerRef.current?.querySelector('.prose');
+    if (editorContent) {
+      html2canvas(editorContent as HTMLElement, {
+        scale: 2,
+        logging: true,
+        useCORS: true,
+        onclone: (document) => {
+            // You can add styles to the cloned document if needed
+        }
+      }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: [canvas.width, canvas.height]
         });
-      }
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save("document.pdf");
+      }).catch(err => {
+        console.error("Error generating PDF:", err);
+      });
+    } else {
+        console.error("Could not find editor content to export.");
     }
   };
 
@@ -132,7 +126,7 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={handleDownloadPdf}>
+                      <DropdownMenuItem onSelect={handleDownloadPdf}>
                         <Download className="mr-2 h-4 w-4" />
                         Download as PDF
                       </DropdownMenuItem>
@@ -155,7 +149,7 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
               </div>
             </div>
           </div>
-          <div ref={editorRef}>
+          <div ref={editorContainerRef}>
             <DocumentEditor
               content={documentContent}
               onContentChange={setDocumentContent}

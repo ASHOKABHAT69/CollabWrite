@@ -14,6 +14,13 @@ interface SmartSuggestionsProps {
   documentContent: string
 }
 
+const exampleQueries = [
+  "Help me structure the introduction",
+  "Suggest some counter-arguments",
+  "Summarize the key points",
+  "Suggest a concluding paragraph"
+];
+
 export function SmartSuggestions({ documentContent }: SmartSuggestionsProps) {
   const [query, setQuery] = useState("")
   const [suggestions, setSuggestions] = useState<string[]>([])
@@ -38,15 +45,33 @@ export function SmartSuggestions({ documentContent }: SmartSuggestionsProps) {
     setIsLoading(false)
   }
 
+  const handleExampleQueryClick = (example: string) => {
+    setQuery(example);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-1 space-y-4">
         <Textarea
-          placeholder="What do you need help with? e.g., 'Help me structure the introduction' or 'Suggest some counter-arguments'"
+          placeholder="What do you need help with? e.g., 'Help me structure the introduction'"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="min-h-[100px]"
         />
+        <div className="text-xs text-muted-foreground">
+            <p className="font-medium mb-2">Or try one of these:</p>
+            <div className="flex flex-wrap gap-2">
+                {exampleQueries.map(example => (
+                    <button 
+                        key={example}
+                        onClick={() => handleExampleQueryClick(example)}
+                        className="px-2 py-1 bg-muted hover:bg-muted/80 rounded-md text-xs"
+                    >
+                        {example}
+                    </button>
+                ))}
+            </div>
+        </div>
         <Button onClick={handleSubmit} disabled={isLoading || !query} className="w-full">
           {isLoading ? (
             <>

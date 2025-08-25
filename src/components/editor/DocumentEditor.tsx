@@ -27,12 +27,15 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
   const editorRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (isEditing && editorRef.current) {
-        editorRef.current.innerHTML = content;
+    // Only update innerHTML when editing mode starts or content changes from outside
+    if (editorRef.current && editorRef.current.innerHTML !== content) {
+      editorRef.current.innerHTML = content;
     }
   }, [isEditing, content]);
 
   const handleContentChange = (evt: React.FormEvent<HTMLDivElement>) => {
+    // Avoid re-rendering on every input by directly passing to the parent
+    // The parent state will be updated, but we won't force a re-render here
     onContentChange(evt.currentTarget.innerHTML);
   };
   
@@ -112,7 +115,7 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
                 contentEditable={isEditing}
                 onInput={handleContentChange}
                 className="prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl mx-auto focus:outline-none min-h-[calc(100vh-18rem)] dark:prose-invert"
-                dangerouslySetInnerHTML={!isEditing ? { __html: content } : undefined}
+                dangerouslySetInnerHTML={{ __html: content }}
             />
         </CardContent>
       </Card>

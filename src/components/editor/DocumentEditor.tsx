@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Bold, Italic, List, ListOrdered, Strikethrough } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -46,8 +47,13 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
 
         setTimeout(() => {
             textarea.focus();
-            textarea.selectionStart = start + 2;
-            textarea.selectionEnd = start + 2 + selectedText.length;
+            if (newText) {
+              textarea.selectionStart = start + newText.length - selectedText.length;
+              textarea.selectionEnd = start + newText.length;
+            } else {
+              textarea.selectionStart = start;
+              textarea.selectionEnd = end;
+            }
         }, 0);
     };
 

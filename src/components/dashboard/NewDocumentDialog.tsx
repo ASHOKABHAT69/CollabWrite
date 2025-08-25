@@ -15,8 +15,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus, X } from "lucide-react"
 
-export function NewDocumentDialog({ children }: { children: React.ReactNode }) {
+interface NewDocumentDialogProps {
+  children: React.ReactNode;
+  onAddDocument: (title: string) => void;
+}
+
+export function NewDocumentDialog({ children, onAddDocument }: NewDocumentDialogProps) {
   const [open, setOpen] = React.useState(false)
+  const [title, setTitle] = React.useState("")
   const [collaborators, setCollaborators] = React.useState<string[]>([""])
 
   const handleAddCollaborator = () => {
@@ -32,6 +38,15 @@ export function NewDocumentDialog({ children }: { children: React.ReactNode }) {
   const handleRemoveCollaborator = (index: number) => {
     const newCollaborators = collaborators.filter((_, i) => i !== index)
     setCollaborators(newCollaborators)
+  }
+
+  const handleCreateDocument = () => {
+    if (title.trim()) {
+      onAddDocument(title.trim());
+      setTitle("");
+      setCollaborators([""]);
+      setOpen(false);
+    }
   }
 
   return (
@@ -53,6 +68,8 @@ export function NewDocumentDialog({ children }: { children: React.ReactNode }) {
               id="doc-title"
               placeholder="My new document"
               className="col-span-3"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
@@ -68,14 +85,15 @@ export function NewDocumentDialog({ children }: { children: React.ReactNode }) {
                       handleCollaboratorChange(index, e.target.value)
                     }
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveCollaborator(index)}
-                    disabled={collaborators.length === 1}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  {collaborators.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveCollaborator(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ))}
               <Button
@@ -90,7 +108,7 @@ export function NewDocumentDialog({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={() => setOpen(false)}>
+          <Button type="submit" onClick={handleCreateDocument} disabled={!title.trim()}>
             Create Document
           </Button>
         </DialogFooter>

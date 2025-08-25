@@ -17,20 +17,22 @@ import html2canvas from 'html2canvas';
 
 export default function DocumentPage({ params }: { params: { id:string } }) {
   const [documentContent, setDocumentContent] = useState(
-`# Project Proposal Q3 - CollabWrite Draft
+`<h1>Project Proposal Q3 - CollabWrite Draft</h1>
 
-## 1. Introduction
-Welcome to CollabWrite, the real-time collaborative document platform. This document serves as a demonstration of its core features, including simultaneous editing, version control, and AI-powered assistance.
+<h2>1. Introduction</h2>
+<p>Welcome to <b>CollabWrite</b>, the real-time collaborative document platform. This document serves as a demonstration of its core features, including simultaneous editing, version control, and AI-powered assistance.</p>
 
-## 2. Real-Time Collaboration
-Multiple users can edit this document at the same time. Cursors of other users will be visible, and changes will appear instantly. Our system handles conflicts automatically, ensuring a smooth editing experience.
+<h2>2. Real-Time Collaboration</h2>
+<p>Multiple users can edit this document at the same time. Cursors of other users will be visible, and changes will appear instantly. Our system handles conflicts automatically, ensuring a smooth editing experience.</p>
 
-## 3. Version Control
-- **Branching:** Use the 'Branch' button to create a new version of this document without affecting the main draft.
-- **History:** Click 'Version History' to see all past changes and restore previous versions if needed.
+<h2>3. Version Control</h2>
+<ul>
+  <li><b>Branching:</b> Use the 'Branch' button to create a new version of this document without affecting the main draft.</li>
+  <li><b>History:</b> Click 'Version History' to see all past changes and restore previous versions if needed.</li>
+</ul>
 
-## 4. Smart Suggestions
-Click the 'Smart Suggestions' button and ask the AI for help. For example, try asking it to "suggest a concluding paragraph for this proposal."`
+<h2>4. Smart Suggestions</h2>
+<p>Click the 'Smart Suggestions' button and ask the AI for help. For example, try asking it to "suggest a concluding paragraph for this proposal."</p>`
   );
 
   const [isEditing, setIsEditing] = useState(false);

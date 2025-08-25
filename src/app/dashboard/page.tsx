@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlusCircle, Users, FileText } from 'lucide-react'
 import { Header } from '@/components/common/Header'
+import { NewDocumentDialog } from '@/components/dashboard/NewDocumentDialog'
 
 const documents = [
   { id: '1', title: 'Project Proposal Q3', lastUpdated: '2 days ago', collaborators: 3, description: 'Drafting the project proposal for the upcoming quarter, focusing on market expansion.' },
@@ -19,10 +20,12 @@ export default function DashboardPage() {
         <div className="container mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold font-headline">Your Documents</h1>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Document
-            </Button>
+            <NewDocumentDialog>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Document
+              </Button>
+            </NewDocumentDialog>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

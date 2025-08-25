@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/common/Header"
 import { DocumentEditor } from "@/components/editor/DocumentEditor"
@@ -8,9 +8,12 @@ import { VersionHistory } from "@/components/editor/VersionHistory"
 import { BranchManager } from "@/components/editor/BranchManager"
 import { SmartSuggestions } from "@/components/editor/SmartSuggestions"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
-import { History, Sparkles, GitBranch, Users, Share2, Edit, Save } from "lucide-react"
+import { History, Sparkles, GitBranch, Users, Share2, Edit, Save, Download, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function DocumentPage({ params }: { params: { id: string } }) {
   const [documentContent, setDocumentContent] = useState(
@@ -31,7 +34,42 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
   );
 
   const [isEditing, setIsEditing] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
   
+  const handleDownloadPdf = () => {
+    const input = editorRef.current;
+    if (input) {
+      // Temporarily remove readOnly to render content for canvas
+      const textarea = input.querySelector('textarea');
+      if (textarea) {
+        const wasReadOnly = textarea.readOnly;
+        textarea.readOnly = false;
+        
+        html2canvas(input, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+           onclone: (document) => {
+            const clonedTextarea = document.querySelector('textarea');
+            if(clonedTextarea) {
+              clonedTextarea.style.height = 'auto';
+              clonedTextarea.style.overflow = 'visible';
+            }
+          }
+        }).then(canvas => {
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'px', [canvas.width, canvas.height]);
+          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+          pdf.save("document.pdf");
+          
+          // Restore readOnly state
+          textarea.readOnly = wasReadOnly;
+        });
+      }
+    }
+  };
+
+
   const collaborators = [
     { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice' },
     { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob' },
@@ -87,9 +125,19 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
                     </Tooltip>
                   ))}
                 </div>
-                <Button>
-                  <Share2 className="mr-2 h-4 w-4" /> Share
-                </Button>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button>
+                        <Share2 className="mr-2 h-4 w-4" /> Share
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={handleDownloadPdf}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download as PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="secondary" className="bg-accent text-accent-foreground hover:bg-accent/90">
@@ -107,11 +155,13 @@ Click the 'Smart Suggestions' button and ask the AI for help. For example, try a
               </div>
             </div>
           </div>
-          <DocumentEditor
-            content={documentContent}
-            onContentChange={setDocumentContent}
-            isEditing={isEditing}
-          />
+          <div ref={editorRef}>
+            <DocumentEditor
+              content={documentContent}
+              onContentChange={setDocumentContent}
+              isEditing={isEditing}
+            />
+          </div>
         </main>
       </div>
     </TooltipProvider>

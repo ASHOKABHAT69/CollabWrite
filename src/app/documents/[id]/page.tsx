@@ -46,7 +46,7 @@ const pageLayoutDimensions: Record<PageLayout, { width: number, height: number }
 };
 
 
-export default function DocumentPage({ params }: { params: { id:string } }) {
+export default function DocumentPage({ params: { id } }: { params: { id:string } }) {
   const [branchContents, setBranchContents] = useState<Record<string, string>>({ main: initialContent });
   const [branches, setBranches] = useState(['main']);
   const [currentBranch, setCurrentBranch] = useState('main');
@@ -57,7 +57,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const router = useRouter();
 
-  const storageKey = `collabwrite-doc-${params.id}`;
+  const storageKey = `collabwrite-doc-${id}`;
 
   useEffect(() => {
     const savedData = localStorage.getItem(storageKey);
@@ -69,7 +69,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
     } else {
         // If no saved data, check if it's a new document from dashboard
         const docs = JSON.parse(localStorage.getItem('collabwrite-documents') || '[]');
-        const currentDoc = docs.find((d: any) => d.id === params.id);
+        const currentDoc = docs.find((d: any) => d.id === id);
         if (!currentDoc) {
           // If doc doesn't even exist in our list, redirect
           router.push('/dashboard');
@@ -77,7 +77,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
         }
     }
     setIsLoaded(true);
-  }, [params.id, router, storageKey]);
+  }, [id, router, storageKey]);
 
 
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
           </div>
           <div ref={editorContainerRef}>
             <DocumentEditor
-              key={`${currentBranch}-${params.id}`}
+              key={`${currentBranch}-${id}`}
               content={documentContent}
               onContentChange={handleContentChange}
               isEditing={isEditing}

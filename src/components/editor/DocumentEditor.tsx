@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react"
@@ -6,11 +7,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { PageLayout } from "@/app/documents/[id]/page";
+import { cn } from "@/lib/utils";
+
 
 interface DocumentEditorProps {
   content: string;
   onContentChange: (content: string) => void;
   isEditing: boolean;
+  pageLayout: PageLayout;
 }
 
 const fontFamilies = [
@@ -25,36 +30,79 @@ const fontFamilies = [
 const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '32px', '48px'];
 
 
-export function DocumentEditor({ content, onContentChange, isEditing }: DocumentEditorProps) {
+export function DocumentEditor({ content, onContentChange, isEditing, pageLayout }: DocumentEditorProps) {
   const editorRef = React.useRef<HTMLDivElement>(null);
-  const isSyncing = React.useRef(false);
+  const [currentFont, setCurrentFont] = React.useState("Inter");
 
+  // This effect syncs the parent's content to the editor's innerHTML
+  // ONLY when the component loads or when we exit edit mode.
   React.useEffect(() => {
-    if (editorRef.current && !isEditing && editorRef.current.innerHTML !== content) {
+    if (editorRef.current && (!isEditing || editorRef.current.innerHTML !== content)) {
         editorRef.current.innerHTML = content;
     }
   }, [isEditing, content]);
 
-  const handleInput = () => {
-    if (editorRef.current) {
+  const handleBlur = () => {
+    if (editorRef.current && isEditing) {
         onContentChange(editorRef.current.innerHTML);
     }
   };
+  
+  const handleSelectionChange = React.useCallback(() => {
+    if (!isEditing) return;
+
+    const updateFont = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        let node = selection.getRangeAt(0).startContainer;
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            node = node.parentNode!;
+        }
+
+        if (node && node instanceof HTMLElement) {
+            const computedStyle = window.getComputedStyle(node);
+            const fontFamily = computedStyle.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+            const matchingFont = fontFamilies.find(f => f.name === fontFamily || f.css.includes(fontFamily));
+            setCurrentFont(matchingFont ? matchingFont.name : "Mixed");
+        } else {
+             setCurrentFont("Mixed");
+        }
+    };
+    
+    // Using setTimeout to allow the selection to properly update in the DOM first
+    setTimeout(updateFont, 0);
+
+  }, [isEditing]);
+
+
+  React.useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [handleSelectionChange]);
+
 
   const applyCommand = (command: string, value?: string) => {
     if (editorRef.current) {
         editorRef.current.focus();
         document.execCommand(command, false, value);
-        // We call handleInput to make sure state is updated after a command
-        handleInput(); 
     }
   };
   
   const handleFontSizeChange = (sizeIndex: number) => {
-    // document.execCommand('fontSize') takes a value from 1-7
-    // We'll map our px sizes to this range.
     const sizeValue = (sizeIndex + 1).toString();
     applyCommand('fontSize', sizeValue);
+  }
+
+  const editorLayoutClasses = {
+      'page-A1': 'w-[2245px] min-h-[3175px]',
+      'page-A2': 'w-[1587px] min-h-[2245px]',
+      'page-A3': 'w-[1123px] min-h-[1587px]',
+      'page-A4': 'w-[794px] min-h-[1123px]',
+      'page-A5': 'w-[559px] min-h-[794px]',
+      'page-auto': 'w-full min-h-[calc(100vh-18rem)]',
   }
 
   return (
@@ -87,14 +135,14 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
             <Separator orientation="vertical" className="h-6 mx-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-32 justify-start" onMouseDown={(e) => e.preventDefault()}>
+                <Button variant="ghost" className="w-36 justify-start" onMouseDown={(e) => e.preventDefault()}>
                     <Type className="mr-2 h-4 w-4" />
-                    <span>Font Family</span>
+                    <span className="truncate">{currentFont}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent onFocusOutside={(e) => e.preventDefault()}>
                 {fontFamilies.map(font => (
-                  <DropdownMenuItem key={font.name} onSelect={() => applyCommand('fontName', font.css)} style={{fontFamily: font.css}}>
+                  <DropdownMenuItem key={font.name} onMouseDown={(e) => e.preventDefault()} onSelect={() => applyCommand('fontName', font.css)} style={{fontFamily: font.css}}>
                     {font.name}
                   </DropdownMenuItem>
                 ))}
@@ -109,7 +157,7 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
               </DropdownMenuTrigger>
               <DropdownMenuContent onFocusOutside={(e) => e.preventDefault()}>
                 {fontSizes.map((size, index) => (
-                  <DropdownMenuItem key={size} onSelect={() => handleFontSizeChange(index)}>
+                  <DropdownMenuItem key={size} onMouseDown={(e) => e.preventDefault()} onSelect={() => handleFontSizeChange(index)}>
                      <span style={{fontSize: size}}>{size}</span>
                   </DropdownMenuItem>
                 ))}
@@ -117,15 +165,15 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
             </DropdownMenu>
           </div>
         )}
-        <CardContent 
-          className="p-4"
-        >
+        <CardContent className="p-4 bg-gray-100 dark:bg-gray-800 flex justify-center">
             <div
                 ref={editorRef}
                 contentEditable={isEditing}
-                onInput={handleInput}
-                className="prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl mx-auto focus:outline-none min-h-[calc(100vh-18rem)] dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: content }}
+                onBlur={handleBlur}
+                className={cn(
+                    "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl focus:outline-none dark:prose-invert bg-card p-8 shadow-md",
+                     editorLayoutClasses[`page-${pageLayout}`]
+                )}
             />
         </CardContent>
       </Card>

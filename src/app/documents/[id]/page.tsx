@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useRef } from 'react';
@@ -8,12 +9,24 @@ import { VersionHistory } from "@/components/editor/VersionHistory"
 import { BranchManager } from "@/components/editor/BranchManager"
 import { SmartSuggestions } from "@/components/editor/SmartSuggestions"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
-import { History, Sparkles, GitBranch, Users, Share2, Edit, Save, Download } from "lucide-react"
+import { History, Sparkles, GitBranch, Share2, Edit, Save, Download, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+export type PageLayout = 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'auto';
+
+const pageLayoutDimensions: Record<PageLayout, { width: number, height: number } | null> = {
+    'A1': { width: 2245, height: 3175 },
+    'A2': { width: 1587, height: 2245 },
+    'A3': { width: 1123, height: 1587 },
+    'A4': { width: 794, height: 1123 },
+    'A5': { width: 559, height: 794 },
+    'auto': null,
+};
+
 
 export default function DocumentPage({ params }: { params: { id:string } }) {
   const [documentContent, setDocumentContent] = useState(
@@ -36,6 +49,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
   );
 
   const [isEditing, setIsEditing] = useState(false);
+  const [pageLayout, setPageLayout] = useState<PageLayout>('auto');
   const editorContainerRef = useRef<HTMLDivElement>(null);
   
   const handleDownloadPdf = () => {
@@ -50,12 +64,12 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
         }
       }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: [canvas.width, canvas.height]
-        });
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        const dimensions = pageLayoutDimensions[pageLayout];
+        const pdf = dimensions 
+          ? new jsPDF({ orientation: dimensions.width > dimensions.height ? 'l' : 'p', unit: 'px', format: [dimensions.width, dimensions.height]})
+          : new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
         pdf.save("document.pdf");
       }).catch(err => {
         console.error("Error generating PDF:", err);
@@ -132,6 +146,22 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
                         <Download className="mr-2 h-4 w-4" />
                         Download as PDF
                       </DropdownMenuItem>
+                       <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Page Layout</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem onSelect={() => setPageLayout('auto')}>Auto</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setPageLayout('A1')}>A1</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setPageLayout('A2')}>A2</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setPageLayout('A3')}>A3</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setPageLayout('A4')}>A4</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setPageLayout('A5')}>A5</DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 <Sheet>
@@ -156,6 +186,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
               content={documentContent}
               onContentChange={setDocumentContent}
               isEditing={isEditing}
+              pageLayout={pageLayout}
             />
           </div>
         </main>

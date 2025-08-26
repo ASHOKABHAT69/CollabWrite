@@ -7,16 +7,19 @@ import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { GitBranch, Plus } from "lucide-react"
 
-export function BranchManager() {
-  const [branches, setBranches] = useState(["main"])
-  const [currentBranch, setCurrentBranch] = useState("main")
+interface BranchManagerProps {
+  branches: string[];
+  currentBranch: string;
+  onCreateBranch: (newBranchName: string) => void;
+  onBranchChange: (branchName: string) => void;
+}
+
+export function BranchManager({ branches, currentBranch, onCreateBranch, onBranchChange }: BranchManagerProps) {
   const [newBranchName, setNewBranchName] = useState("")
 
   const handleCreateBranch = () => {
-    if (newBranchName && !branches.includes(newBranchName)) {
-      setBranches([...branches, newBranchName])
-      setNewBranchName("")
-    }
+    onCreateBranch(newBranchName);
+    setNewBranchName("");
   }
 
   return (
@@ -42,7 +45,7 @@ export function BranchManager() {
                   key={branch}
                   variant={branch === currentBranch ? "secondary" : "ghost"}
                   className="justify-start"
-                  onClick={() => setCurrentBranch(branch)}
+                  onClick={() => onBranchChange(branch)}
                 >
                   <GitBranch className="mr-2 h-4 w-4" />
                   {branch}
@@ -57,7 +60,7 @@ export function BranchManager() {
                   value={newBranchName}
                   onChange={(e) => setNewBranchName(e.target.value)}
                 />
-                <Button size="icon" className="h-9 w-9" onClick={handleCreateBranch}>
+                <Button size="icon" className="h-9 w-9" onClick={handleCreateBranch} disabled={!newBranchName || branches.includes(newBranchName)}>
                     <Plus className="h-4 w-4"/>
                     <span className="sr-only">Create Branch</span>
                 </Button>

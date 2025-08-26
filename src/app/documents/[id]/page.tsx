@@ -18,19 +18,7 @@ import html2canvas from 'html2canvas';
 
 export type PageLayout = 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'auto';
 
-const pageLayoutDimensions: Record<PageLayout, { width: number, height: number } | null> = {
-    'A1': { width: 2245, height: 3175 },
-    'A2': { width: 1587, height: 2245 },
-    'A3': { width: 1123, height: 1587 },
-    'A4': { width: 794, height: 1123 },
-    'A5': { width: 559, height: 794 },
-    'auto': null,
-};
-
-
-export default function DocumentPage({ params }: { params: { id:string } }) {
-  const [documentContent, setDocumentContent] = useState(
-`<h1>Project Proposal Q3 - CollabWrite Draft</h1>
+const initialContent = `<h1>Project Proposal Q3 - CollabWrite Draft</h1>
 
 <h2>1. Introduction</h2>
 <p>Welcome to <b>CollabWrite</b>, the real-time collaborative document platform. This document serves as a demonstration of its core features, including simultaneous editing, version control, and AI-powered assistance.</p>
@@ -46,12 +34,46 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
 
 <h2>4. Smart Suggestions</h2>
 <p>Click the 'Smart Suggestions' button and ask the AI for help. For example, try asking it to "suggest a concluding paragraph for this proposal."</p>`
-  );
+
+const pageLayoutDimensions: Record<PageLayout, { width: number, height: number } | null> = {
+    'A1': { width: 2245, height: 3175 },
+    'A2': { width: 1587, height: 2245 },
+    'A3': { width: 1123, height: 1587 },
+    'A4': { width: 794, height: 1123 },
+    'A5': { width: 559, height: 794 },
+    'auto': null,
+};
+
+
+export default function DocumentPage({ params }: { params: { id:string } }) {
+  const [branchContents, setBranchContents] = useState<Record<string, string>>({ main: initialContent });
+  const [branches, setBranches] = useState(['main']);
+  const [currentBranch, setCurrentBranch] = useState('main');
 
   const [isEditing, setIsEditing] = useState(false);
   const [pageLayout, setPageLayout] = useState<PageLayout>('auto');
   const editorContainerRef = useRef<HTMLDivElement>(null);
+
+  const documentContent = branchContents[currentBranch];
   
+  const handleContentChange = (newContent: string) => {
+    setBranchContents(prev => ({
+        ...prev,
+        [currentBranch]: newContent,
+    }));
+  };
+
+  const handleCreateBranch = (newBranchName: string) => {
+    if (newBranchName && !branches.includes(newBranchName)) {
+      setBranches([...branches, newBranchName]);
+      setBranchContents(prev => ({
+          ...prev,
+          [newBranchName]: prev[currentBranch] // copy content from current branch
+      }));
+      setCurrentBranch(newBranchName); // switch to the new branch
+    }
+  }
+
   const handleDownloadPdf = () => {
     const editorContent = editorContainerRef.current?.querySelector('.prose');
     if (editorContent) {
@@ -107,7 +129,12 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
           <div className="container mx-auto py-4">
             <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
               <div className="flex items-center gap-4">
-                <BranchManager />
+                <BranchManager 
+                  branches={branches}
+                  currentBranch={currentBranch}
+                  onCreateBranch={handleCreateBranch}
+                  onBranchChange={setCurrentBranch}
+                />
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline">
@@ -196,8 +223,9 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
           </div>
           <div ref={editorContainerRef}>
             <DocumentEditor
+              key={currentBranch}
               content={documentContent}
-              onContentChange={setDocumentContent}
+              onContentChange={handleContentChange}
               isEditing={isEditing}
               pageLayout={pageLayout}
             />

@@ -27,7 +27,8 @@ const fontFamilies = [
   { name: 'Verdana', css: 'Verdana, sans-serif' },
 ];
 
-const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '32px', '48px'];
+const fontSizes = ['1', '2', '3', '4', '5', '6', '7'];
+const fontDisplaySizes = ['8px', '10px', '12px', '14px', '18px', '24px', '32px'];
 
 
 export function DocumentEditor({ content, onContentChange, isEditing, pageLayout }: DocumentEditorProps) {
@@ -35,38 +36,38 @@ export function DocumentEditor({ content, onContentChange, isEditing, pageLayout
   const [currentFont, setCurrentFont] = React.useState("Inter");
 
   // This effect syncs the parent's content to the editor's innerHTML
-  // ONLY when the component loads or when we exit edit mode.
+  // ONLY when the component loads.
   React.useEffect(() => {
-    if (editorRef.current && (!isEditing || editorRef.current.innerHTML !== content)) {
+    if (editorRef.current) {
         editorRef.current.innerHTML = content;
     }
-  }, [isEditing, content]);
+  }, []);
 
-  const handleBlur = () => {
+  const handleInput = () => {
     if (editorRef.current && isEditing) {
         onContentChange(editorRef.current.innerHTML);
     }
   };
   
   const handleSelectionChange = React.useCallback(() => {
-    if (!isEditing) return;
+    if (!isEditing || !editorRef.current) return;
 
     const updateFont = () => {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) return;
 
         let node = selection.getRangeAt(0).startContainer;
+        
+        // Traverse up to find the element node if the start is a text node
         if (node.nodeType !== Node.ELEMENT_NODE) {
             node = node.parentNode!;
         }
 
-        if (node && node instanceof HTMLElement) {
+        if (node && node instanceof HTMLElement && editorRef.current?.contains(node)) {
             const computedStyle = window.getComputedStyle(node);
             const fontFamily = computedStyle.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
-            const matchingFont = fontFamilies.find(f => f.name === fontFamily || f.css.includes(fontFamily));
+            const matchingFont = fontFamilies.find(f => f.name.toLowerCase() === fontFamily.toLowerCase() || f.css.toLowerCase().includes(fontFamily.toLowerCase()));
             setCurrentFont(matchingFont ? matchingFont.name : "Mixed");
-        } else {
-             setCurrentFont("Mixed");
         }
     };
     
@@ -88,12 +89,12 @@ export function DocumentEditor({ content, onContentChange, isEditing, pageLayout
     if (editorRef.current) {
         editorRef.current.focus();
         document.execCommand(command, false, value);
+        onContentChange(editorRef.current.innerHTML); // Manually trigger update after command
     }
   };
   
-  const handleFontSizeChange = (sizeIndex: number) => {
-    const sizeValue = (sizeIndex + 1).toString();
-    applyCommand('fontSize', sizeValue);
+  const handleFontSizeChange = (size: string) => {
+    applyCommand('fontSize', size);
   }
 
   const editorLayoutClasses = {
@@ -157,8 +158,8 @@ export function DocumentEditor({ content, onContentChange, isEditing, pageLayout
               </DropdownMenuTrigger>
               <DropdownMenuContent onFocusOutside={(e) => e.preventDefault()}>
                 {fontSizes.map((size, index) => (
-                  <DropdownMenuItem key={size} onMouseDown={(e) => e.preventDefault()} onSelect={() => handleFontSizeChange(index)}>
-                     <span style={{fontSize: size}}>{size}</span>
+                  <DropdownMenuItem key={size} onMouseDown={(e) => e.preventDefault()} onSelect={() => handleFontSizeChange(size)}>
+                     <span style={{fontSize: fontDisplaySizes[index]}}>{fontDisplaySizes[index]}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -169,7 +170,7 @@ export function DocumentEditor({ content, onContentChange, isEditing, pageLayout
             <div
                 ref={editorRef}
                 contentEditable={isEditing}
-                onBlur={handleBlur}
+                onInput={handleInput}
                 className={cn(
                     "prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl focus:outline-none dark:prose-invert bg-card p-8 shadow-md",
                      editorLayoutClasses[`page-${pageLayout}`]

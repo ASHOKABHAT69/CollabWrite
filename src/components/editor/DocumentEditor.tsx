@@ -34,17 +34,20 @@ const fontDisplaySizes = ['8px', '10px', '12px', '14px', '18px', '24px', '32px']
 export function DocumentEditor({ content, onContentChange, isEditing, pageLayout }: DocumentEditorProps) {
   const editorRef = React.useRef<HTMLDivElement>(null);
   const [currentFont, setCurrentFont] = React.useState("Inter");
+  const isInternalUpdate = React.useRef(false);
 
   // This effect syncs the parent's content to the editor's innerHTML
-  // ONLY when the component loads.
+  // ONLY when the component loads or the content prop changes from the outside.
   React.useEffect(() => {
-    if (editorRef.current) {
+    if (editorRef.current && content !== editorRef.current.innerHTML && !isInternalUpdate.current) {
         editorRef.current.innerHTML = content;
     }
-  }, []);
+    isInternalUpdate.current = false;
+  }, [content]);
 
   const handleInput = () => {
     if (editorRef.current && isEditing) {
+        isInternalUpdate.current = true;
         onContentChange(editorRef.current.innerHTML);
     }
   };
@@ -86,10 +89,10 @@ export function DocumentEditor({ content, onContentChange, isEditing, pageLayout
 
 
   const applyCommand = (command: string, value?: string) => {
-    if (editorRef.current) {
+    if (editorRef.current && isEditing) {
         editorRef.current.focus();
         document.execCommand(command, false, value);
-        onContentChange(editorRef.current.innerHTML); // Manually trigger update after command
+        handleInput(); // Manually trigger update after command
     }
   };
   

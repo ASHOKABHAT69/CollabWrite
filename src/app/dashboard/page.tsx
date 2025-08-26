@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,11 +25,28 @@ export type Document = {
 };
 
 export default function DashboardPage() {
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const savedDocs = localStorage.getItem('collabwrite-documents');
+    if (savedDocs) {
+      setDocuments(JSON.parse(savedDocs));
+    } else {
+      setDocuments(initialDocuments);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if(isLoaded) {
+      localStorage.setItem('collabwrite-documents', JSON.stringify(documents));
+    }
+  }, [documents, isLoaded]);
 
   const handleAddDocument = (title: string) => {
     const newDoc: Document = {
-      id: (documents.length + 1).toString(),
+      id: (Date.now()).toString(),
       title,
       lastUpdated: 'Just now',
       collaborators: 1,
@@ -36,6 +54,10 @@ export default function DashboardPage() {
     };
     setDocuments(prevDocs => [newDoc, ...prevDocs]);
   };
+
+  if (!isLoaded) {
+      return <div>Loading...</div>
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">

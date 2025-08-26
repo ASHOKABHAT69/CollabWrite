@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/common/Header"
 import { DocumentEditor } from "@/components/editor/DocumentEditor"
@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useRouter } from 'next/navigation';
 
 export type PageLayout = 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'auto';
 
@@ -53,6 +54,39 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
   const [isEditing, setIsEditing] = useState(false);
   const [pageLayout, setPageLayout] = useState<PageLayout>('auto');
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const router = useRouter();
+
+  const storageKey = `collabwrite-doc-${params.id}`;
+
+  useEffect(() => {
+    const savedData = localStorage.getItem(storageKey);
+    if (savedData) {
+        const { branchContents, branches, currentBranch } = JSON.parse(savedData);
+        setBranchContents(branchContents);
+        setBranches(branches);
+        setCurrentBranch(currentBranch);
+    } else {
+        // If no saved data, check if it's a new document from dashboard
+        const docs = JSON.parse(localStorage.getItem('collabwrite-documents') || '[]');
+        const currentDoc = docs.find((d: any) => d.id === params.id);
+        if (!currentDoc) {
+          // If doc doesn't even exist in our list, redirect
+          router.push('/dashboard');
+          return;
+        }
+    }
+    setIsLoaded(true);
+  }, [params.id, router, storageKey]);
+
+
+  useEffect(() => {
+      if (isLoaded) {
+        const dataToSave = JSON.stringify({ branchContents, branches, currentBranch });
+        localStorage.setItem(storageKey, dataToSave);
+      }
+  }, [branchContents, branches, currentBranch, isLoaded, storageKey]);
+
 
   const documentContent = branchContents[currentBranch];
   
@@ -120,6 +154,10 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
     { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob' },
     { id: '3', name: 'Charlie', avatar: 'https://i.pravatar.cc/150?u=charlie' },
   ];
+  
+  if (!isLoaded) {
+      return <div>Loading document...</div>
+  }
 
   return (
     <TooltipProvider>
@@ -223,7 +261,7 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
           </div>
           <div ref={editorContainerRef}>
             <DocumentEditor
-              key={currentBranch}
+              key={`${currentBranch}-${params.id}`}
               content={documentContent}
               onContentChange={handleContentChange}
               isEditing={isEditing}

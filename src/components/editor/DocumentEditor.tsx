@@ -27,66 +27,72 @@ const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '32px', '48px
 
 export function DocumentEditor({ content, onContentChange, isEditing }: DocumentEditorProps) {
   const editorRef = React.useRef<HTMLDivElement>(null);
+  const isSyncing = React.useRef(false);
 
   React.useEffect(() => {
-    // When editing mode starts, sync the editor's content with the prop.
-    // Or if the content changes from outside while not editing.
-    if (editorRef.current && isEditing && editorRef.current.innerHTML !== content) {
-      editorRef.current.innerHTML = content;
+    if (editorRef.current && !isEditing && editorRef.current.innerHTML !== content) {
+        editorRef.current.innerHTML = content;
     }
   }, [isEditing, content]);
 
-  const handleBlur = () => {
-    // When the user clicks away from the editor, sync the content back to parent state
-    if(editorRef.current) {
-      onContentChange(editorRef.current.innerHTML);
-    }
-  }
-
-  const applyCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    if(editorRef.current) {
-      onContentChange(editorRef.current.innerHTML);
-      editorRef.current.focus();
+  const handleInput = () => {
+    if (editorRef.current) {
+        onContentChange(editorRef.current.innerHTML);
     }
   };
+
+  const applyCommand = (command: string, value?: string) => {
+    if (editorRef.current) {
+        editorRef.current.focus();
+        document.execCommand(command, false, value);
+        // We call handleInput to make sure state is updated after a command
+        handleInput(); 
+    }
+  };
+  
+  const handleFontSizeChange = (sizeIndex: number) => {
+    // document.execCommand('fontSize') takes a value from 1-7
+    // We'll map our px sizes to this range.
+    const sizeValue = (sizeIndex + 1).toString();
+    applyCommand('fontSize', sizeValue);
+  }
 
   return (
     <div className="container mx-auto">
       <Card className="shadow-lg">
         {isEditing && (
           <div className="p-2 border-b sticky top-[60px] bg-background z-10 flex flex-wrap items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => applyCommand('bold')} title="Bold">
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('bold')} title="Bold">
               <Bold className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => applyCommand('italic')} title="Italic">
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('italic')} title="Italic">
               <Italic className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => applyCommand('underline')} title="Underline">
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('underline')} title="Underline">
               <Underline className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => applyCommand('strikeThrough')} title="Strikethrough">
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('strikeThrough')} title="Strikethrough">
               <Strikethrough className="h-4 w-4" />
             </Button>
-             <Button variant="ghost" size="icon" onClick={() => applyCommand('formatBlock', '<p>')} title="Paragraph">
+             <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('formatBlock', '<p>')} title="Paragraph">
                 <Pilcrow className="h-4 w-4" />
             </Button>
             <Separator orientation="vertical" className="h-6 mx-1" />
-            <Button variant="ghost" size="icon" onClick={() => applyCommand('insertUnorderedList')} title="Unordered List">
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('insertUnorderedList')} title="Unordered List">
               <List className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => applyCommand('insertOrderedList')} title="Ordered List">
+            <Button variant="ghost" size="icon" onMouseDown={(e) => e.preventDefault()} onClick={() => applyCommand('insertOrderedList')} title="Ordered List">
               <ListOrdered className="h-4 w-4" />
             </Button>
             <Separator orientation="vertical" className="h-6 mx-1" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-32 justify-start">
+                <Button variant="ghost" className="w-32 justify-start" onMouseDown={(e) => e.preventDefault()}>
                     <Type className="mr-2 h-4 w-4" />
                     <span>Font Family</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent onFocusOutside={(e) => e.preventDefault()}>
                 {fontFamilies.map(font => (
                   <DropdownMenuItem key={font.name} onSelect={() => applyCommand('fontName', font.css)} style={{fontFamily: font.css}}>
                     {font.name}
@@ -96,14 +102,14 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-28 justify-start">
+                <Button variant="ghost" className="w-28 justify-start" onMouseDown={(e) => e.preventDefault()}>
                   <Baseline className="mr-2 h-4 w-4" />
                   <span>Font Size</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent onFocusOutside={(e) => e.preventDefault()}>
                 {fontSizes.map((size, index) => (
-                  <DropdownMenuItem key={size} onSelect={() => applyCommand('fontSize', (index + 1).toString())}>
+                  <DropdownMenuItem key={size} onSelect={() => handleFontSizeChange(index)}>
                      <span style={{fontSize: size}}>{size}</span>
                   </DropdownMenuItem>
                 ))}
@@ -117,7 +123,7 @@ export function DocumentEditor({ content, onContentChange, isEditing }: Document
             <div
                 ref={editorRef}
                 contentEditable={isEditing}
-                onBlur={handleBlur}
+                onInput={handleInput}
                 className="prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl 2xl:prose-2xl mx-auto focus:outline-none min-h-[calc(100vh-18rem)] dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: content }}
             />

@@ -9,7 +9,7 @@ import { VersionHistory } from "@/components/editor/VersionHistory"
 import { BranchManager } from "@/components/editor/BranchManager"
 import { SmartSuggestions } from "@/components/editor/SmartSuggestions"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
-import { History, Sparkles, GitBranch, Share2, Edit, Save, Download, FileText } from "lucide-react"
+import { History, Sparkles, GitBranch, Share2, Edit, Save, Download, FileText, PenSquare } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
@@ -59,8 +59,21 @@ export default function DocumentPage({ params }: { params: { id:string } }) {
         scale: 2,
         logging: true,
         useCORS: true,
-        onclone: (document) => {
-            // You can add styles to the cloned document if needed
+        onclone: (doc) => {
+           const header = doc.createElement('div');
+           header.style.padding = '20px';
+           header.style.textAlign = 'center';
+           header.style.borderBottom = '1px solid #ccc';
+           header.style.marginBottom = '20px';
+
+           const title = doc.createElement('h1');
+           title.innerText = 'CollabWrite';
+           title.style.fontSize = '24px';
+           title.style.fontWeight = 'bold';
+           title.style.margin = '0';
+           
+           header.appendChild(title);
+           doc.body.prepend(header);
         }
       }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');

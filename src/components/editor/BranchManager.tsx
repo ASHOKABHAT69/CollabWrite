@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -7,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { GitBranch, Plus } from "lucide-react"
 
 export function BranchManager() {
-  const [branches, setBranches] = useState(["main", "feature/new-ui", "fix/api-bug"])
+  const [branches, setBranches] = useState(["main"])
   const [currentBranch, setCurrentBranch] = useState("main")
   const [newBranchName, setNewBranchName] = useState("")
 
